@@ -39,3 +39,8 @@ fallback values if this firmware should require the router connection. The
 web server and page remain firmware-specific; the Wi-Fi connection is shared.
 Changing the private header requires rebuilding and uploading each firmware
 that uses this library.
+
+If the router connection fails, USB serial reports the disconnect reason and
+whether the configured network was visible in a 2.4 GHz scan. A visible
+network with `AUTH_FAIL` usually warrants checking the password and the
+router's Wi-Fi security setting before changing firmware code.

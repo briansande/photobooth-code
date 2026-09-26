@@ -15,12 +15,24 @@ namespace {
 constexpr uint32_t kConnectTimeoutMs = 15000;
 constexpr uint32_t kReconnectIntervalMs = 10000;
 uint32_t lastReconnectAttemptMs = 0;
+bool eventLoggerRegistered = false;
 
 }  // namespace
 
 bool begin(const char *fallbackSsid, const char *fallbackPassword) {
 #if PHOTOBOOTH_HAS_WIFI_CREDENTIALS
   if (kWifiSsid[0] != '\0') {
+    if (!eventLoggerRegistered) {
+      WiFi.onEvent([](arduino_event_id_t event, arduino_event_info_t info) {
+        const auto reason = static_cast<wifi_err_reason_t>(
+            info.wifi_sta_disconnected.reason);
+        Serial.printf("Wi-Fi disconnected: %s (%u)\n",
+                      WiFi.disconnectReasonName(reason),
+                      static_cast<unsigned int>(reason));
+      }, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+      eventLoggerRegistered = true;
+    }
+
     WiFi.mode(WIFI_STA);
     WiFi.begin(kWifiSsid, kWifiPassword);
     Serial.printf("Joining Wi-Fi: %s\n", kWifiSsid);
@@ -37,8 +49,25 @@ bool begin(const char *fallbackSsid, const char *fallbackPassword) {
       return true;
     }
 
-    Serial.println("Wi-Fi join timed out; starting fallback access point");
+    const int connectionStatus = static_cast<int>(WiFi.status());
+    Serial.printf("Wi-Fi join timed out (status=%d)\n", connectionStatus);
     WiFi.disconnect();
+
+    const int networkCount = WiFi.scanNetworks();
+    bool networkSeen = false;
+    for (int index = 0; index < networkCount; ++index) {
+      if (WiFi.SSID(index) == kWifiSsid) {
+        networkSeen = true;
+        Serial.printf("Configured network visible, signal=%d dBm\n",
+                      WiFi.RSSI(index));
+        break;
+      }
+    }
+    WiFi.scanDelete();
+    if (!networkSeen) {
+      Serial.println("Configured network not found in 2.4 GHz scan");
+    }
+    Serial.println("Starting fallback access point");
   }
 #endif
 
