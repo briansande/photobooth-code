@@ -5,14 +5,13 @@ See [wiring and startup behavior](../../hardware/shutter.md) before operating.
 
 ## Controls
 
-- **Shutter speed dial:** 1/1000, 1/500, 1/250, 1/125, 1/60, 1/30,
-  1/15, 1/8, 1/4, 1/2, 1s, 2s, 3s, 4s, 8s, 15s, and 30s
-  (default 1s). Turn, scroll, or use arrow keys. Fractions use rounded
-  microsecond durations (1/60 = 16,667 us).
+- **Shutter open time (seconds):** enter a decimal from 0.001 to 30 seconds,
+  with up to six digits after the decimal point (default 1 second). For example,
+  `0.5`, `1.25`, and `3`. The firmware converts the value to microseconds.
 - **Closed servo angle:** nominal 0 through 180 degrees (default 90).
 - **Open servo angle:** nominal 0 through 180 degrees (default 100).
 - **Shoot:** commands the open angle, starts the timer, then commands the closed
-  angle. The shot captures both angles and the selected speed when pressed.
+  angle. The shot captures both angles and the entered time when pressed.
 - **Open:** immediately commands the open angle and holds it until Close or Shoot.
 - **Close:** immediately commands the closed angle, cancelling any active shot.
 
@@ -24,7 +23,7 @@ used settings. Position status is the commanded position, not sensor feedback.
 
 Timing starts when the open command is issued, not when the servo physically
 arrives. Servo travel and the 20 ms PWM period limit useful exposure precision;
-fast shutter speeds may close before the servo reaches the open angle. The dial
+very short times may close before the servo reaches the open angle. The input
 sets command timing, not measured optical exposure. An ESP timer closes independently
 of the HTTP loop, including if the browser disconnects or a request stalls.
 
@@ -53,4 +52,4 @@ Check initial idle state, both manual positions, automatic closure, rejection of
 overlapping shots, cancellation by Open and Close, and invalid/missing/out-of-range input.
 Confirm actual direction, travel and mechanical closure on the physical shutter.
 The HTTP API is GET `/status` and POST `/action`, using form fields `action`
-(`shoot`, `open`, `close`), `speed_index` (0..16), `closed_angle`, and `open_angle`.
+(`shoot`, `open`, `close`), `open_seconds` (decimal, 0.001..30), `closed_angle`, and `open_angle`.
