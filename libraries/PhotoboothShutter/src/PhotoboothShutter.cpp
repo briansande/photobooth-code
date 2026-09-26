@@ -19,15 +19,16 @@ bool PhotoboothShutter::begin(uint8_t pin, uint8_t channel) {
 }
 
 void PhotoboothShutter::writeAngle(uint16_t angle) {
-  // Nominal 0..180 maps to 1000..2000 us at 50 Hz. Calibrate actual travel.
-  const uint32_t pulseUs = 1000 + (static_cast<uint32_t>(angle) * 1000 + 90) / 180;
+  // Common 180-degree servo range: 0..180 maps to 500..2500 us at 50 Hz.
+  const uint32_t pulseUs = 500 + (static_cast<uint32_t>(angle) * 2000 + 90) / 180;
   ledcWrite(channel_, (pulseUs * 16384UL + 10000) / 20000);
   angle_ = angle;
 }
 
 bool PhotoboothShutter::shoot(uint16_t openAngle, uint16_t closedAngle,
-                             uint32_t durationMs) {
-  if (openAngle > 180 || closedAngle > 180 || durationMs < 1 || durationMs > 60000) return false;
+                             uint32_t durationUs) {
+  if (openAngle > 180 || closedAngle > 180 || durationUs < 1000 ||
+      durationUs > 30000000) return false;
   xSemaphoreTake(mutex_, portMAX_DELAY);
   if (shooting_) { xSemaphoreGive(mutex_); return false; }
   esp_timer_stop(timer_);
@@ -35,8 +36,8 @@ bool PhotoboothShutter::shoot(uint16_t openAngle, uint16_t closedAngle,
   writeAngle(openAngle);
   position_ = Position::Open;
   shooting_ = true;
-  deadlineUs_ = esp_timer_get_time() + static_cast<int64_t>(durationMs) * 1000;
-  const bool started = esp_timer_start_once(timer_, durationMs * 1000ULL) == ESP_OK;
+  deadlineUs_ = esp_timer_get_time() + durationUs;
+  const bool started = esp_timer_start_once(timer_, durationUs) == ESP_OK;
   if (!started) {
     writeAngle(closedAngle_);
     position_ = Position::Closed;

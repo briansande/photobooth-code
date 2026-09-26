@@ -2,12 +2,12 @@
 
 Reusable positional-servo shutter for Arduino ESP32 (the pinned PlatformIO
 espressif32 6.13.0 / Arduino 2.x LEDC API). Reserves LEDC channel 0 by default.
-Call begin(pin), then shoot(openAngle, closedAngle, durationMs), move(open, angle),
+Call begin(pin), then shoot(openAngle, closedAngle, durationUs), move(open, angle),
 or status(). Check begin's result before using the other methods. Objects must
 live for the application and begin must be called only once.
 
 No pulses are sent until an explicit move/shoot. Angles are nominal 0..180,
-mapped to 1000..2000 us at 50 Hz. Shots accept 1..60000 ms. Overlapping shoots
+mapped to 500..2500 us at 50 Hz. Shots accept 1000..30000000 us. Overlapping shoots
 return false; move cancels an active shot. Timer-start failure closes immediately.
 
 An esp_timer task callback performs automatic closure independently of the web

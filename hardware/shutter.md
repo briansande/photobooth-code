@@ -26,13 +26,14 @@ of power/reset. No pulse also means no commanded holding torque at startup.
 
 Defaults are closed=90 and open=100, chosen to start with a small commanded span;
 they are not calibrated shutter positions. Begin with the linkage free to move
-and adjust in small steps. The nominal 0..180 input maps to 1000..2000 us pulses
-at 50 Hz (14-bit LEDC channel 0). Actual shaft angle/range depends on the servo.
-The mapping deliberately avoids wider endpoint pulses until the servo model and
-mechanical limits are known. Change the mapping in PhotoboothShutter only after
-checking the servo specification. GPIO8 is not used by this prototype.
+and adjust in small steps. The nominal 0..180 input maps to 500..2500 us pulses
+at 50 Hz (14-bit LEDC channel 0), a common full-travel RC servo range. The earlier
+1000..2000 us mapping produced about half the expected travel on the connected
+servo, so the range was widened at the user's request. Actual angle and safe
+endpoints depend on the servo and linkage. Check for hard stops and reduce the
+range for a servo that cannot accept these pulses. GPIO8 is not used by this prototype.
 
-Timed shots allow 1..60000 ms and return to the captured closed angle. Manual Open
+Timed shots allow the 1/1000..30s dial speeds and return to the captured closed angle. Manual Open
 holds indefinitely for calibration; Close cancels the timer. Pulses continue to
 hold the last commanded position after closure. Servo travel is not sensed;
 open time measures between commands and includes movement time. Test physical

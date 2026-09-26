@@ -16,7 +16,7 @@ class PhotoboothShutter {
     uint32_t completedShots;
   };
   bool begin(uint8_t pin, uint8_t channel = 0);
-  bool shoot(uint16_t openAngle, uint16_t closedAngle, uint32_t durationMs);
+  bool shoot(uint16_t openAngle, uint16_t closedAngle, uint32_t durationUs);
   void move(bool open, uint16_t angle);
   Status status();
  private:
