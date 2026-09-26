@@ -1,15 +1,8 @@
 #include <Arduino.h>
+#include <PhotoboothWiFi.h>
 #include <WebServer.h>
-#include <WiFi.h>
 
 #include <cstdlib>
-
-#if __has_include("wifi_secrets.h")
-#include "wifi_secrets.h"
-#define BLINK_HAS_WIFI_CREDENTIALS 1
-#else
-#define BLINK_HAS_WIFI_CREDENTIALS 0
-#endif
 
 namespace {
 
@@ -18,50 +11,13 @@ constexpr char kAccessPointName[] = "ESP32-Blink-Test";
 constexpr char kAccessPointPassword[] = "blinktest";
 constexpr uint32_t kMinimumDurationMs = 10;
 constexpr uint32_t kMaximumDurationMs = 60000;
-constexpr uint32_t kConnectTimeoutMs = 15000;
-constexpr uint32_t kReconnectIntervalMs = 10000;
 
 WebServer server(80);
 uint32_t onDurationMs = 100;
 uint32_t offDurationMs = 100;
 uint32_t lastTransitionMs = 0;
 uint32_t lastStatusMs = 0;
-uint32_t lastReconnectAttemptMs = 0;
 bool ledIsOn = false;
-
-bool startNetwork() {
-#if BLINK_HAS_WIFI_CREDENTIALS
-  if (kWifiSsid[0] != '\0') {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(kWifiSsid, kWifiPassword);
-    Serial.printf("Joining Wi-Fi: %s\n", kWifiSsid);
-
-    const uint32_t startedAt = millis();
-    while (WiFi.status() != WL_CONNECTED &&
-           millis() - startedAt < kConnectTimeoutMs) {
-      delay(250);
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.printf("Open: http://%s/\n", WiFi.localIP().toString().c_str());
-      return true;
-    }
-
-    Serial.println("Wi-Fi join timed out; starting setup access point");
-    WiFi.disconnect();
-  }
-#endif
-
-  WiFi.mode(WIFI_AP);
-  if (!WiFi.softAP(kAccessPointName, kAccessPointPassword)) {
-    Serial.println("ERROR: Wi-Fi access point failed to start");
-    return false;
-  }
-
-  Serial.printf("Wi-Fi: %s\n", kAccessPointName);
-  Serial.printf("Open: http://%s/\n", WiFi.softAPIP().toString().c_str());
-  return true;
-}
 
 void setLed(bool turnOn) {
   ledIsOn = turnOn;
@@ -165,7 +121,7 @@ void setup() {
   Serial.begin(115200);
   delay(250);
 
-  if (!startNetwork()) {
+  if (!PhotoboothWiFi::begin(kAccessPointName, kAccessPointPassword)) {
     return;
   }
 
@@ -185,15 +141,7 @@ void setup() {
 
 void loop() {
   server.handleClient();
-
-#if BLINK_HAS_WIFI_CREDENTIALS
-  if (WiFi.getMode() == WIFI_STA && WiFi.status() != WL_CONNECTED &&
-      millis() - lastReconnectAttemptMs >= kReconnectIntervalMs) {
-    Serial.println("Wi-Fi disconnected; reconnecting");
-    WiFi.reconnect();
-    lastReconnectAttemptMs = millis();
-  }
-#endif
+  PhotoboothWiFi::loop();
 
   const uint32_t now = millis();
   const uint32_t currentDurationMs = ledIsOn ? onDurationMs : offDurationMs;
@@ -203,11 +151,10 @@ void loop() {
   }
 
   if (now - lastStatusMs >= 5000) {
-    Serial.printf("WEB BLINK TEST running: on=%lu ms, off=%lu ms, IP=%s\n",
+    Serial.printf("WEB BLINK TEST running: on=%lu ms, off=%lu ms, URL=%s\n",
                   static_cast<unsigned long>(onDurationMs),
                   static_cast<unsigned long>(offDurationMs),
-                  (WiFi.getMode() == WIFI_STA ? WiFi.localIP() : WiFi.softAPIP())
-                      .toString().c_str());
+                  PhotoboothWiFi::pageUrl().c_str());
     lastStatusMs = now;
   }
 }

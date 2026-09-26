@@ -1,2 +1,2 @@
 .pio/
-firmware/web-blink-test/include/wifi_secrets.h
+libraries/PhotoboothWiFi/src/wifi_secrets.h

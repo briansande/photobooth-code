@@ -7,13 +7,13 @@ Shutter-Test project. Your router then gives the ESP32 an address such as
 
 ## Configure home Wi-Fi
 
-Edit the local `include/wifi_secrets.h` file with your 2.4 GHz Wi-Fi name and
-password. It has empty values now and is ignored by Git. On another checkout,
-copy `include/wifi_secrets.example.h` to that name first. Do not put credentials
-in `platformio.ini` or tracked source. A change to this file requires rebuilding
-and uploading the firmware. If the SSID is empty, the private file is absent,
-or the router cannot be reached within 15 seconds, the ESP32 starts its own
-`ESP32-Blink-Test` Wi-Fi network instead.
+Edit the shared local file `libraries/PhotoboothWiFi/src/wifi_secrets.h` with
+your 2.4 GHz Wi-Fi name and password. It has empty values now and is ignored
+by Git. Every firmware that uses `PhotoboothWiFi` reads this same file. On
+another checkout, copy `wifi_secrets.example.h` beside it to that name first.
+A change to this file requires rebuilding and uploading the firmware. If the
+SSID is empty, the private file is absent, or the router cannot be reached
+within 15 seconds, the ESP32 starts its own `ESP32-Blink-Test` Wi-Fi network.
 
 ## Upload
 
@@ -40,7 +40,6 @@ reset to the 100 ms defaults whenever the ESP32 restarts. Wi-Fi credentials are
 compiled from the private header; do not share firmware binaries if you do not
 want those credentials embedded in them.
 
-USB serial at 115200 baud reports the access-point address and every accepted
-timing change. It also prints a `WEB BLINK TEST running` status with the current
-IP address every five seconds, so you can find the page without resetting the
-board.
+USB serial at 115200 baud reports the page address and every accepted timing
+change. It also prints a `WEB BLINK TEST running` status with the current URL
+every five seconds, so you can find the page without resetting the board.

@@ -19,7 +19,9 @@ be built or uploaded without affecting the source for the other projects.
 
 Reusable component code belongs in [`libraries/`](libraries/README.md), wiring
 and hardware details in [`hardware/`](hardware/README.md), and helper scripts in
-[`tools/`](tools/README.md).
+[`tools/`](tools/README.md). Firmware that needs Wi-Fi uses the shared
+[`PhotoboothWiFi` library](libraries/PhotoboothWiFi/README.md) and one private
+credentials file for the entire repository.
 
 ## Flash a project
 

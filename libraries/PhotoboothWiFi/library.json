@@ -1,0 +1,7 @@
+{
+  "name": "PhotoboothWiFi",
+  "version": "0.1.0",
+  "description": "Shared ESP32 Wi-Fi connection and fallback access point for photobooth firmware",
+  "frameworks": "arduino",
+  "platforms": "espressif32"
+}
