@@ -72,35 +72,65 @@ String formatSeconds(uint32_t durationUs) {
 const char kPage[] PROGMEM = R"HTML(<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Shutter test</title><style>
-:root{font-family:system-ui,sans-serif;color:#eaf2fb;background:#111c29;color-scheme:dark}
-body{margin:0;min-height:100vh;display:grid;place-items:center}
-main{box-sizing:border-box;width:min(94vw,460px);margin:24px 0;padding:28px;background:#203247;border-radius:18px}
-h1{margin:0 0 8px}p{color:#bdcedf;line-height:1.5}label{display:block;margin:20px 0;font-weight:600}
-input{box-sizing:border-box;display:block;width:100%;margin-top:8px;padding:12px;border:1px solid #7c93ab;border-radius:8px;font:inherit;background:#132438}
-button{padding:14px;border:0;border-radius:9px;font:inherit;font-weight:700;cursor:pointer;background:#cee2f3;color:#102435}
-button:disabled{opacity:.45;cursor:wait}
-.shoot{width:100%;background:#51d6b0}.tests{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-#status{padding:12px;background:#132438;border-radius:8px}#message{min-height:1.5em;color:#ffd398}.hint{font-size:.87rem}
+<title>Shutter | Photobooth</title><style>
+:root{color-scheme:dark;font-family:"Segoe UI",Arial,sans-serif;color:#ecebe7;background:#141516}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:28px 18px}
+main{width:min(100%,480px)}
+header{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #3b3e3f;padding-bottom:20px}
+.kicker,.section-title,.status-label,.unit,.footer-note{font-size:11px;line-height:1.4;letter-spacing:.1em;text-transform:uppercase}
+.kicker{color:#989c9a;margin:0 0 11px}.tag{color:#9ca19e;border:1px solid #555a58;padding:5px 7px;margin-bottom:4px}
+h1{font-size:36px;font-weight:500;letter-spacing:-.04em;line-height:1;margin:0}
+.status-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 0;border-bottom:1px solid #3b3e3f}
+.status-label{color:#929895}.status-value{display:flex;align-items:center;gap:9px;text-align:right;font-size:13px;color:#d2d3cf}
+.status-value::before{content:"";display:block;flex:none;width:7px;height:7px;border-radius:50%;background:#7f8581}
+.status-value[data-state="shooting"]::before{background:#c8a970}.status-value[data-state="open"]::before{background:#a9ba9b}
+.section-title{color:#929895;margin:26px 0 18px}
+label{display:block;color:#d7d9d5;font-size:13px;margin-bottom:9px}
+.field{position:relative}.field input{display:block;width:100%;height:56px;border:1px solid #45494a;border-radius:3px;background:#1c1e1f;color:#f3f2ee;padding:0 46px 0 15px;font:500 21px/1 Consolas,"SFMono-Regular",monospace;font-variant-numeric:tabular-nums;outline:none}
+.field input:focus{border-color:#b9bdb9;box-shadow:0 0 0 1px #b9bdb9}
+.field input::-webkit-inner-spin-button,.field input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.field input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.unit{position:absolute;right:15px;top:20px;color:#898f8c;pointer-events:none}
+.angles{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:2px}
+button{min-height:52px;border-radius:3px;font:600 13px "Segoe UI",Arial,sans-serif;letter-spacing:.02em;cursor:pointer}
+button:focus-visible{outline:2px solid #ecebe7;outline-offset:3px}button:disabled{opacity:.45;cursor:default}
+.shoot{width:100%;border:1px solid #e2e0d9;background:#e2e0d9;color:#171818;margin:29px 0 12px}
+.shoot:hover:not(:disabled){background:#f5f3ed}
+.tests{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tests button{border:1px solid #646968;background:transparent;color:#e0e0da}
+.tests button:hover:not(:disabled){background:#26292a;border-color:#a6aca8}
+.footer-note{color:#898f8c;letter-spacing:0;text-transform:none;margin:23px 0 0}
+#message{min-height:21px;margin:14px 0 0;color:#d5ae87;font-size:13px}
+@media(max-width:380px){h1{font-size:32px}.angles{gap:9px}.field input{font-size:19px}}
 </style></head><body><main>
-<h1>Shutter test</h1><p>Set the servo positions, then take a shot.</p>
-<div id="status" role="status">Connecting...</div>
+<header><div><p class="kicker">Photobooth / GPIO 01</p><h1>Shutter</h1></div><span class="tag kicker">TEST</span></header>
+<div class="status-row"><span class="status-label">Status</span><div id="status" class="status-value" role="status" data-state="idle">Connecting...</div></div>
 <form id="controls">
-<label>Shutter open time (seconds)<input id="open_seconds" name="open_seconds" type="number" min="0.001" max="30" step="any" value="{{OPEN_SECONDS}}" required></label>
-<label>Closed servo angle (&deg;)<input id="closed_angle" name="closed_angle" type="number" min="0" max="180" step="1" value="{{CLOSED}}" required></label>
-<label>Open servo angle (&deg;)<input id="open_angle" name="open_angle" type="number" min="0" max="180" step="1" value="{{OPEN}}" required></label>
+<p class="section-title">Exposure</p>
+<label for="open_seconds">Open time</label>
+<div class="field"><input id="open_seconds" name="open_seconds" type="number" inputmode="decimal" min="0.001" max="30" step="any" value="{{OPEN_SECONDS}}" required><span class="unit">sec</span></div>
+<p class="section-title">Servo position</p>
+<div class="angles">
+<div><label for="closed_angle">Closed angle</label>
+ <div class="field"><input id="closed_angle" name="closed_angle" type="number" min="0" max="180" step="1" value="{{CLOSED}}" required><span class="unit">deg</span></div>
+</div>
+<div><label for="open_angle">Open angle</label>
+ <div class="field"><input id="open_angle" name="open_angle" type="number" min="0" max="180" step="1" value="{{OPEN}}" required><span class="unit">deg</span></div>
+</div>
+</div>
 <button class="shoot" type="submit" id="shoot">Shoot</button>
 <div class="tests"><button type="button" id="open">Open</button><button type="button" id="close">Close</button></div>
 </form>
-<p class="hint">Open and Close cancel a shot and immediately command that position. Each button uses the angles above.</p>
-<p class="hint">Servo idle at startup. Calibrate with small angle changes. Settings reset after power off.</p>
+<p class="footer-note">Open and Close cancel a shot. Settings reset when the board restarts.</p>
 <div id="message" role="alert"></div>
 <script>
 const form=document.querySelector('#controls'),statusBox=document.querySelector('#status'),message=document.querySelector('#message');
 let busy=false,shooting=false;
 function buttons(){document.querySelector('#shoot').disabled=busy||shooting;document.querySelector('#open').disabled=busy;document.querySelector('#close').disabled=busy;}
-function show(s){shooting=s.shooting;statusBox.textContent=s.state==='idle'?'Idle - servo has not moved':(s.shooting?'Shooting - '+s.remaining_ms+' ms remaining':s.state==='open'?'Open':'Closed')+' | commanded '+s.angle+'\u00b0';buttons();}
-async function refresh(){try{const r=await fetch('/status',{cache:'no-store'});if(!r.ok)throw Error();const s=await r.json();if(!busy)show(s);}catch(e){if(!busy)statusBox.textContent='Connection lost - checking again...';}}
+function show(s){shooting=s.shooting;statusBox.dataset.state=s.shooting?'shooting':s.state;
+ statusBox.textContent=s.state==='idle'?'Idle':(s.shooting?'Exposing · '+s.remaining_ms+' ms':s.state==='open'?'Open · '+s.angle+'°':'Closed · '+s.angle+'°');buttons();}
+async function refresh(){try{const r=await fetch('/status',{cache:'no-store'});if(!r.ok)throw Error();const s=await r.json();if(!busy)show(s);}catch(e){if(!busy){statusBox.dataset.state='idle';statusBox.textContent='Connection lost'};}}
 async function command(action){
   if(busy)return;
   const relevant=action==='shoot'?[...form.querySelectorAll('input')]:[document.querySelector(action==='open'?'#open_angle':'#closed_angle')];
