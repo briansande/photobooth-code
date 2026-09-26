@@ -14,6 +14,9 @@ another checkout, copy `wifi_secrets.example.h` beside it to that name first.
 A change to this file requires rebuilding and uploading the firmware. If the
 SSID is empty, the private file is absent, or the router cannot be reached
 within 15 seconds, the ESP32 starts its own `ESP32-Blink-Test` Wi-Fi network.
+With credentials configured, it keeps trying the router every 10 seconds while
+the fallback network remains available. Watch USB serial for a later
+`Wi-Fi connected. Open:` line if the first connection attempt times out.
 
 ## Upload
 

@@ -34,7 +34,9 @@ void loop() {
 
 The access point name and password are optional fallback values; the library
 uses the shared router credentials first. Without credentials or after a
-15-second connection timeout, it starts the fallback access point. Pass no
+15-second connection timeout, it starts the fallback access point and keeps
+retrying the router every 10 seconds. Once connected, `pageUrl()` reports the
+router address; while disconnected, it reports the fallback address. Pass no
 fallback values if this firmware should require the router connection. The
 web server and page remain firmware-specific; the Wi-Fi connection is shared.
 Changing the private header requires rebuilding and uploading each firmware

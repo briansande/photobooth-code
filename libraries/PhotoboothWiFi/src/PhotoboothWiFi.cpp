@@ -30,6 +30,9 @@ bool begin(const char *fallbackSsid, const char *fallbackPassword) {
                       WiFi.disconnectReasonName(reason),
                       static_cast<unsigned int>(reason));
       }, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+      WiFi.onEvent([](arduino_event_id_t event, arduino_event_info_t info) {
+        Serial.printf("Wi-Fi connected. Open: %s\n", pageUrl().c_str());
+      }, ARDUINO_EVENT_WIFI_STA_GOT_IP);
       eventLoggerRegistered = true;
     }
 
@@ -51,7 +54,7 @@ bool begin(const char *fallbackSsid, const char *fallbackPassword) {
 
     const int connectionStatus = static_cast<int>(WiFi.status());
     Serial.printf("Wi-Fi join timed out (status=%d)\n", connectionStatus);
-    WiFi.disconnect();
+    lastReconnectAttemptMs = millis();
 
     const int networkCount = WiFi.scanNetworks();
     bool networkSeen = false;
@@ -76,7 +79,15 @@ bool begin(const char *fallbackSsid, const char *fallbackPassword) {
     return false;
   }
 
-  WiFi.mode(WIFI_AP);
+  // Keep the station active so a temporary router failure does not strand the
+  // firmware on its fallback access point.
+  WiFi.mode(
+#if PHOTOBOOTH_HAS_WIFI_CREDENTIALS
+      kWifiSsid[0] != '\0' ? WIFI_AP_STA : WIFI_AP
+#else
+      WIFI_AP
+#endif
+  );
   if (!WiFi.softAP(fallbackSsid, fallbackPassword)) {
     Serial.println("ERROR: Wi-Fi access point failed to start");
     return false;
@@ -89,18 +100,19 @@ bool begin(const char *fallbackSsid, const char *fallbackPassword) {
 
 void loop() {
 #if PHOTOBOOTH_HAS_WIFI_CREDENTIALS
-  if (WiFi.getMode() == WIFI_STA && WiFi.status() != WL_CONNECTED &&
+  if ((WiFi.getMode() == WIFI_STA || WiFi.getMode() == WIFI_AP_STA) &&
+      WiFi.status() != WL_CONNECTED &&
       millis() - lastReconnectAttemptMs >= kReconnectIntervalMs) {
     Serial.println("Wi-Fi disconnected; reconnecting");
-    WiFi.reconnect();
+    WiFi.begin(kWifiSsid, kWifiPassword);
     lastReconnectAttemptMs = millis();
   }
 #endif
 }
 
 String pageUrl() {
-  const IPAddress ip = WiFi.getMode() == WIFI_STA ? WiFi.localIP()
-                                                : WiFi.softAPIP();
+  const IPAddress ip = WiFi.status() == WL_CONNECTED ? WiFi.localIP()
+                                                    : WiFi.softAPIP();
   return "http://" + ip.toString() + "/";
 }
 

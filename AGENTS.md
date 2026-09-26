@@ -100,7 +100,9 @@ filled in. Read the router-assigned URL (often `http://10.0.0.x/`) from the
 `Open:` serial line; the browser device must be on the same network. If the
 private file is missing or connection times out, firmware instead creates
 `ESP32-Blink-Test` (password `blinktest`) at `http://192.168.4.1/`. Do not
-mistake that fallback address for the router-assigned one. The firmware emits
+mistake that fallback address for the router-assigned one. The shared library
+keeps retrying the router while the fallback AP is active, and logs a new
+`Wi-Fi connected. Open:` URL if it joins later. The firmware emits
 `WEB BLINK TEST running` with its current URL every five seconds. Browser timing
 changes are reported as `Blink timing updated: on=N ms, off=N ms`.
 
