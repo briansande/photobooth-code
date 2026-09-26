@@ -28,6 +28,7 @@ The known-good board tests are:
 
 - `firmware/board-tests/esp32-c3-blink-fast/` (100 ms on, 100 ms off)
 - `firmware/board-tests/esp32-c3-blink-slow/` (200 ms on, 200 ms off)
+- `firmware/web-blink-test/` (browser-configurable GPIO8 timing)
 
 Component-specific prototypes belong in `firmware/<component>-test/`. The
 eventual integrated application belongs in `firmware/photobooth-controller/`.
@@ -83,6 +84,13 @@ The two board tests identify themselves over USB serial at 115200 baud:
 | --- | --- | --- | --- |
 | `esp32-c3-blink-fast` | 100 ms on, 100 ms off | `FAST blink test: N` | About 200 ms |
 | `esp32-c3-blink-slow` | 200 ms on, 200 ms off | `SLOW blink test: N` | About 400 ms |
+
+The web blink test creates Wi-Fi network `ESP32-Blink-Test` with password
+`blinktest`. Its page is at `http://192.168.4.1/`; it does not join an existing
+Wi-Fi network or require stored credentials. At startup, verify serial contains
+`WEB BLINK TEST ready`, the SSID, and the page URL. The firmware also emits
+`WEB BLINK TEST running` every five seconds. Browser timing changes are reported
+as `Blink timing updated: on=N ms, off=N ms`.
 
 An upload is fully verified only after PlatformIO reports success and several
 consecutive serial messages contain the expected firmware label and timing.
