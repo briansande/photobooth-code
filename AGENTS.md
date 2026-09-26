@@ -18,8 +18,20 @@ This repository contains a solo developer's photobooth code.
 
 ## ESP32-C3 SuperMini workflow
 
-The connected development board is a SuperMini ESP32-C3, hardware marking
-HW-466AB. The known-good PlatformIO example is in `esp32-c3-blink/`.
+The development boards are SuperMini ESP32-C3 boards with hardware marking
+HW-466AB. This repository can contain multiple boards and independent firmware
+projects. Every directory under `firmware/` that contains `platformio.ini` is a
+separate PlatformIO project. Do not assume that two connected boards run the
+same firmware or use the same COM port.
+
+The known-good board tests are:
+
+- `firmware/board-tests/esp32-c3-blink-fast/` (100 ms on, 100 ms off)
+- `firmware/board-tests/esp32-c3-blink-slow/` (200 ms on, 200 ms off)
+
+Component-specific prototypes belong in `firmware/<component>-test/`. The
+eventual integrated application belongs in `firmware/photobooth-controller/`.
+Put reusable component logic in `libraries/` and wiring notes in `hardware/`.
 
 ### Hardware and project settings
 
@@ -28,7 +40,7 @@ HW-466AB. The known-good PlatformIO example is in `esp32-c3-blink/`.
 - Use PlatformIO board `esp32-c3-devkitm-1` with the Arduino framework.
 - Use DIO flash mode, 115200 upload/monitor speed, and enable native USB with
   `ARDUINO_USB_MODE=1` and `ARDUINO_USB_CDC_ON_BOOT=1`. These settings are
-  already recorded in `esp32-c3-blink/platformio.ini`.
+  already recorded in each current project's `platformio.ini`.
 - The onboard blue LED is on GPIO8 and is active-low: write `LOW` to turn it
   on and `HIGH` to turn it off. The red LED is the power indicator.
 
@@ -39,11 +51,15 @@ in the user's local PlatformIO environment:
 
 ```powershell
 $pio = "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe"
-& $pio run --project-dir esp32-c3-blink
+& $pio run --project-dir firmware/board-tests/esp32-c3-blink-fast
 & $pio device list
-& $pio run --project-dir esp32-c3-blink --target upload --upload-port COM5
+& $pio run --project-dir firmware/board-tests/esp32-c3-blink-fast --target upload --upload-port COM5
 & $pio device monitor --port COM5 --baud 115200
 ```
+
+For routine use, `tools/flash.ps1 <project-directory>` performs device
+detection, build, and upload. Pass `-Port COMx` if multiple Espressif devices
+are connected.
 
 Do not assume the board will always be COM5. Run `device list` and use the port
 whose hardware ID is the Espressif USB device (previously `VID:PID=303A:1001`).
@@ -56,6 +72,11 @@ behavior when it cannot be observed in software.
 Uploading replaces the firmware currently on the board. If the task requests
 new board behavior, update the source and documentation, build, upload, verify,
 and commit the relevant files. Keep generated `.pio/` output untracked.
+
+Do not assign actuator pins or energize motors, relays, or solenoids in scaffold
+projects until their wiring and safe startup behavior are documented. Keep
+component logic non-blocking where practical so it can later be reused by the
+integrated controller.
 
 If upload cannot connect, hold **BOOT**, tap and release **RESET**, release
 **BOOT**, and retry the upload. Tap **RESET** afterward if the program does not

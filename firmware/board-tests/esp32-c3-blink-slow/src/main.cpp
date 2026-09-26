@@ -2,7 +2,7 @@
 
 // SuperMini HW-466AB: the onboard blue LED is active-low on GPIO8.
 constexpr uint8_t kLedPin = 8;
-constexpr unsigned long kBlinkIntervalMs = 100;
+constexpr unsigned long kBlinkIntervalMs = 200;
 
 void setup() {
   digitalWrite(kLedPin, HIGH);
@@ -19,5 +19,5 @@ void loop() {
   digitalWrite(kLedPin, HIGH);
   delay(kBlinkIntervalMs);
 
-  Serial.printf("SuperMini blink test: %lu\n", ++blinkCount);
+  Serial.printf("SLOW blink test: %lu\n", ++blinkCount);
 }
