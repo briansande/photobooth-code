@@ -13,7 +13,7 @@ be built or uploaded without affecting the source for the other projects.
 | [`firmware/board-tests/esp32-c3-blink-fast`](firmware/board-tests/esp32-c3-blink-fast/README.md) | Five-blink-per-second board and USB test | Working |
 | [`firmware/board-tests/esp32-c3-blink-slow`](firmware/board-tests/esp32-c3-blink-slow/README.md) | Half-speed firmware-switching test | Working |
 | [`firmware/web-blink-test`](firmware/web-blink-test/README.md) | Browser-controlled LED timing test | Working |
-| [`firmware/shutter-test`](firmware/shutter-test/README.md) | Isolated shutter development | Safe scaffold |
+| [`firmware/shutter-test`](firmware/shutter-test/README.md) | Browser-controlled servo shutter on GPIO1 | Implemented |
 | [`firmware/paper-feed-test`](firmware/paper-feed-test/README.md) | Isolated paper-feed development | Safe scaffold |
 | [`firmware/photobooth-controller`](firmware/photobooth-controller/README.md) | Future combined controller | Safe scaffold |
 

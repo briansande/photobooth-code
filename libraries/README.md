@@ -12,3 +12,6 @@ own directory with `library.json`, `src/`, and focused tests when appropriate.
 [`PhotoboothWiFi/`](PhotoboothWiFi/README.md) is the shared Wi-Fi module. It
 keeps the network credentials in one Git-ignored file for every firmware that
 opts in.
+
+[PhotoboothShutter/](PhotoboothShutter/README.md) provides servo positioning and
+a timed return to the closed angle, independent of the web request loop.

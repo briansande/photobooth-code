@@ -1,7 +1,52 @@
 # Shutter test
 
-Safe, buildable scaffold for isolated shutter development. It currently prints
-a startup message and does not configure or drive any GPIO pins.
+Browser-controlled positional servo on GPIO1 of the HW-466AB ESP32-C3 SuperMini.
+See [wiring and startup behavior](../../hardware/shutter.md) before operating.
 
-Document the shutter wiring, electrical interface, safe default state, and
-maximum activation time in `hardware/` before adding output behavior here.
+## Controls
+
+- **Shutter open time (ms):** whole milliseconds, 1 through 60000 (default 1000).
+- **Closed servo angle:** nominal 0 through 180 degrees (default 90).
+- **Open servo angle:** nominal 0 through 180 degrees (default 100).
+- **Shoot:** commands the open angle, starts the timer, then commands the closed
+  angle. The shot captures both angles and duration when pressed.
+- **Open:** immediately commands the open angle and holds it until Close or Shoot.
+- **Close:** immediately commands the closed angle, cancelling any active shot.
+
+During a shot, Shoot is disabled/rejected; Open and Close remain available and cancel the timer.
+The test buttons validate only their own angle, so invalid timing cannot block
+Close. No servo pulses are generated on startup until a button is pressed.
+Settings remain in RAM and reset on reboot. Page reloads show the most recently
+used settings. Position status is the commanded position, not sensor feedback.
+
+Timing starts when the open command is issued, not when the servo physically
+arrives. Servo travel and the 20 ms PWM period limit useful exposure precision;
+very short shots may not visibly move the servo. An ESP timer closes independently
+of the HTTP loop, including if the browser disconnects or a request stalls.
+
+## Build and upload
+
+From the repository root:
+
+```powershell
+& "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run --project-dir firmware/shutter-test
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\flash.ps1 firmware/shutter-test
+```
+
+Uses the shared [PhotoboothWiFi](../../libraries/PhotoboothWiFi/README.md)
+credentials. Read the router-assigned URL from USB serial at 115200 baud and open
+it on the same network. If router Wi-Fi is unavailable, join `ESP32-Shutter-Test`
+(password `shuttertest`) and open `http://192.168.4.1/`. The library keeps retrying
+the router. The page is intended for a trusted local network.
+
+Serial emits `SHUTTER TEST running` every five seconds with GPIO1, time, angles,
+shot state and URL. Each accepted action and completed shot is logged. Close the
+serial monitor after sampling so the next upload can open the port.
+
+## Verification
+
+Check initial idle state, both manual positions, automatic closure, rejection of
+overlapping shots, cancellation by Open and Close, and invalid/missing/out-of-range input.
+Confirm actual direction, travel and mechanical closure on the physical shutter.
+The HTTP API is GET `/status` and POST `/action`, using form fields `action`
+(`shoot`, `open`, `close`), `open_ms`, `closed_angle`, and `open_angle`.
