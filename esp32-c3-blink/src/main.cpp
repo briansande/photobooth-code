@@ -2,7 +2,7 @@
 
 // SuperMini HW-466AB: the onboard blue LED is active-low on GPIO8.
 constexpr uint8_t kLedPin = 8;
-constexpr unsigned long kBlinkIntervalMs = 500;
+constexpr unsigned long kBlinkIntervalMs = 100;
 
 void setup() {
   digitalWrite(kLedPin, HIGH);

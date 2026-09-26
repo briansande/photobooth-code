@@ -1,9 +1,9 @@
 # ESP32-C3 SuperMini USB blink test
 
 For the SuperMini HW-466AB with the onboard blue LED on GPIO8 (active-low).
-The LED is on for half a second, then off for half a second. The red power
+The LED is on for 100 ms, then off for 100 ms (five blinks per second). The red power
 LED stays on. USB serial prints `SuperMini blink test: 1`, `2`, etc. once
-per second at 115200 baud. No external wiring or libraries are needed.
+per blink at 115200 baud. No external wiring or libraries are needed.
 
 ## Build and upload with PlatformIO
 
