@@ -20,6 +20,10 @@ The test buttons validate only their own angle, so invalid timing cannot block
 Close. No servo pulses are generated on startup until a button is pressed.
 Settings remain in RAM and reset on reboot. Page reloads show the most recently
 used settings. Position status is the commanded position, not sensor feedback.
+The page checks status once a second. If a request has no response within four
+seconds, it shows a connection error and retries status automatically. The
+controls become available again when the board responds; after a lost Shoot
+response, check the reported position because the command might have run.
 
 Timing starts when the open command is issued, not when the servo physically
 arrives. Servo travel and the 20 ms PWM period limit useful exposure precision;
@@ -42,9 +46,10 @@ it on the same network. If router Wi-Fi is unavailable, join `ESP32-Shutter-Test
 (password `shuttertest`) and open `http://192.168.4.1/`. The library keeps retrying
 the router. The page is intended for a trusted local network.
 
-Serial emits `SHUTTER TEST running` every five seconds with GPIO1, time, angles,
-shot state and URL. Each accepted action and completed shot is logged. Close the
-serial monitor after sampling so the next upload can open the port.
+Serial emits `SHUTTER TEST running` every five seconds with GPIO1, time,
+angles, shot state, Wi-Fi RSSI, free heap and URL. Each accepted action and
+completed shot is logged. Close the serial monitor after sampling so the next
+upload can open the port.
 
 ## Verification
 
@@ -53,3 +58,16 @@ overlapping shots, cancellation by Open and Close, and invalid/missing/out-of-ra
 Confirm actual direction, travel and mechanical closure on the physical shutter.
 The HTTP API is GET `/status` and POST `/action`, using form fields `action`
 (`shoot`, `open`, `close`), `open_seconds` (decimal, 0.001..30), `closed_angle`, and `open_angle`.
+
+## If the page loses contact
+
+Check the latest `SHUTTER TEST running` line over USB serial. When its URL is
+`http://192.168.4.1/`, the router join failed: connect the browser device to
+`ESP32-Shutter-Test` first. When it shows a router address, the browser device
+must be able to reach the ESP32 on the local network; different Wi-Fi networks
+or client isolation can prevent that even when the ESP32 reports a good signal.
+Repeated `AUTH_EXPIRE` or `AUTH_FAIL` messages indicate a router authentication
+problem rather than a slow webpage. Check the configured 2.4 GHz network and
+router security settings without putting credentials in serial logs or Git.
+If failures correlate with servo movement, also check the servo's supply and
+shared ground as described in the hardware notes.

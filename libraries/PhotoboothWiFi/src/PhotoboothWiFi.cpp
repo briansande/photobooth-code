@@ -14,8 +14,10 @@ namespace {
 
 constexpr uint32_t kConnectTimeoutMs = 15000;
 constexpr uint32_t kReconnectIntervalMs = 10000;
+constexpr uint32_t kFallbackReconnectIntervalMs = 60000;
 uint32_t lastReconnectAttemptMs = 0;
 bool eventLoggerRegistered = false;
+bool fallbackActive = false;
 
 }  // namespace
 
@@ -37,6 +39,9 @@ bool begin(const char *fallbackSsid, const char *fallbackPassword) {
     }
 
     WiFi.mode(WIFI_STA);
+    // Schedule retries ourselves so a failing router does not repeatedly
+    // interrupt the fallback access point while someone is using its page.
+    WiFi.setAutoReconnect(false);
     WiFi.begin(kWifiSsid, kWifiPassword);
     Serial.printf("Joining Wi-Fi: %s\n", kWifiSsid);
 
@@ -92,6 +97,7 @@ bool begin(const char *fallbackSsid, const char *fallbackPassword) {
     Serial.println("ERROR: Wi-Fi access point failed to start");
     return false;
   }
+  fallbackActive = true;
 
   Serial.printf("Wi-Fi: %s\n", fallbackSsid);
   Serial.printf("Open: %s\n", pageUrl().c_str());
@@ -100,9 +106,16 @@ bool begin(const char *fallbackSsid, const char *fallbackPassword) {
 
 void loop() {
 #if PHOTOBOOTH_HAS_WIFI_CREDENTIALS
+  const uint32_t retryInterval = fallbackActive ? kFallbackReconnectIntervalMs
+                                                 : kReconnectIntervalMs;
   if ((WiFi.getMode() == WIFI_STA || WiFi.getMode() == WIFI_AP_STA) &&
       WiFi.status() != WL_CONNECTED &&
-      millis() - lastReconnectAttemptMs >= kReconnectIntervalMs) {
+      millis() - lastReconnectAttemptMs >= retryInterval) {
+    if (fallbackActive && WiFi.softAPgetStationNum() > 0) {
+      // Station scans share the radio with SoftAP and can disrupt its clients.
+      lastReconnectAttemptMs = millis();
+      return;
+    }
     Serial.println("Wi-Fi disconnected; reconnecting");
     WiFi.begin(kWifiSsid, kWifiPassword);
     lastReconnectAttemptMs = millis();

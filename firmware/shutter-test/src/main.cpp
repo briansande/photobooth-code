@@ -2,6 +2,7 @@
 #include <PhotoboothShutter.h>
 #include <PhotoboothWiFi.h>
 #include <WebServer.h>
+#include <WiFi.h>
 
 namespace {
 WebServer server(80);
@@ -126,24 +127,35 @@ button:focus-visible{outline:2px solid #ecebe7;outline-offset:3px}button:disable
 <div id="message" role="alert"></div>
 <script>
 const form=document.querySelector('#controls'),statusBox=document.querySelector('#status'),message=document.querySelector('#message');
-let busy=false,shooting=false;
-function buttons(){document.querySelector('#shoot').disabled=busy||shooting;document.querySelector('#open').disabled=busy;document.querySelector('#close').disabled=busy;}
-function show(s){shooting=s.shooting;statusBox.dataset.state=s.shooting?'shooting':s.state;
+let busy=false,shooting=false,connected=false,refreshing=false,statusGeneration=0;
+function buttons(){document.querySelector('#shoot').disabled=busy||shooting||!connected;
+ document.querySelector('#open').disabled=busy||!connected;document.querySelector('#close').disabled=busy||!connected;}
+function show(s){connected=true;shooting=s.shooting;statusBox.dataset.state=s.shooting?'shooting':s.state;
  statusBox.textContent=s.state==='idle'?'Idle':(s.shooting?'Exposing · '+s.remaining_ms+' ms':s.state==='open'?'Open · '+s.angle+'°':'Closed · '+s.angle+'°');buttons();}
-async function refresh(){try{const r=await fetch('/status',{cache:'no-store'});if(!r.ok)throw Error();const s=await r.json();if(!busy)show(s);}catch(e){if(!busy){statusBox.dataset.state='idle';statusBox.textContent='Connection lost'};}}
+function disconnected(){connected=false;statusBox.dataset.state='idle';statusBox.textContent='Connection lost · retrying';buttons();}
+async function request(path,options={},timeoutMs=4000){const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),timeoutMs);
+ try{const response=await fetch(path,{...options,signal:controller.signal,cache:'no-store'});
+   return {ok:response.ok,body:await response.text()};}finally{clearTimeout(timer);}}
+async function refresh(){if(busy||refreshing)return;refreshing=true;const generation=statusGeneration;
+ try{const r=await request('/status');if(!r.ok)throw Error();
+   if(!busy&&generation===statusGeneration)show(JSON.parse(r.body));}
+ catch(e){if(!busy&&generation===statusGeneration)disconnected();}finally{refreshing=false;}}
 async function command(action){
   if(busy)return;
   const relevant=action==='shoot'?[...form.querySelectorAll('input')]:[document.querySelector(action==='open'?'#open_angle':'#closed_angle')];
   if(!relevant.every(input=>input.reportValidity()))return;
-  busy=true;buttons();message.textContent='';
+  ++statusGeneration;busy=true;buttons();message.textContent='';
   try{const body=new URLSearchParams();body.set('action',action);for(const input of relevant)body.set(input.name,input.value);
-    const r=await fetch('/action',{method:'POST',body});if(!r.ok)throw Error(await r.text());show(await r.json());
-  }catch(e){message.textContent=e.message||'Command failed; check connection.';}
+    const r=await request('/action',{method:'POST',body});if(!r.ok)throw Error(r.body);show(JSON.parse(r.body));
+  }catch(e){if(e.name==='AbortError'||e instanceof TypeError){disconnected();
+      message.textContent='No response from the board. The command may have run; checking its status.';}
+    else message.textContent=e.message||'Command failed.';}
   finally{busy=false;buttons();refresh();}
 }
 form.addEventListener('submit',e=>{e.preventDefault();command('shoot');});
 document.querySelector('#open').onclick=()=>command('open');document.querySelector('#close').onclick=()=>command('close');
-async function poll(){await refresh();setTimeout(poll,500);}poll();
+buttons();async function poll(){await refresh();setTimeout(poll,1000);}poll();
 </script></main></body></html>)HTML";
 
 void sendStatus() {
@@ -221,9 +233,11 @@ void loop() {
     reportedShots = state.completedShots;
   }
   if (millis() - lastStatusMs >= 5000) {
-    Serial.printf("SHUTTER TEST running: GPIO1, open=%s s, closed=%lu deg, open=%lu deg, shooting=%d, URL=%s\n",
+    Serial.printf("SHUTTER TEST running: GPIO1, open=%s s, closed=%lu deg, open=%lu deg, shooting=%d, RSSI=%d dBm, heap=%lu, URL=%s\n",
                   formatSeconds(openDurationUs).c_str(), static_cast<unsigned long>(closedAngle),
-                  static_cast<unsigned long>(openAngle), state.shooting, PhotoboothWiFi::pageUrl().c_str());
+                  static_cast<unsigned long>(openAngle), state.shooting,
+                  WiFi.status() == WL_CONNECTED ? WiFi.RSSI() : 0,
+                  static_cast<unsigned long>(ESP.getFreeHeap()), PhotoboothWiFi::pageUrl().c_str());
     lastStatusMs = millis();
   }
   delay(1);
