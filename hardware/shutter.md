@@ -24,8 +24,8 @@ Open, Close, or Shoot is pressed. During reset, GPIO can be high impedance; a
 cannot guarantee a servo's power-on behavior or mechanically close during loss
 of power/reset. No pulse also means no commanded holding torque at startup.
 
-Defaults are closed=90 and open=100, chosen to start with a small commanded span;
-they are not calibrated shutter positions. Begin with the linkage free to move
+Defaults are closed=30 and open=85, based on the user's shutter calibration;
+they are not measured shaft positions. Begin with the linkage free to move
 and adjust in small steps. The nominal 0..180 input maps to 500..2500 us pulses
 at 50 Hz (14-bit LEDC channel 0), a common full-travel RC servo range. The earlier
 1000..2000 us mapping produced about half the expected travel on the connected

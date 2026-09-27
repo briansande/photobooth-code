@@ -8,8 +8,8 @@ See [wiring and startup behavior](../../hardware/shutter.md) before operating.
 - **Shutter open time (seconds):** enter a decimal from 0.001 to 30 seconds,
   with up to six digits after the decimal point (default 1 second). For example,
   `0.5`, `1.25`, and `3`. The firmware converts the value to microseconds.
-- **Closed servo angle:** nominal 0 through 180 degrees (default 90).
-- **Open servo angle:** nominal 0 through 180 degrees (default 100).
+- **Closed servo angle:** nominal 0 through 180 degrees (default 30).
+- **Open servo angle:** nominal 0 through 180 degrees (default 85).
 - **Shoot:** commands the open angle, starts the timer, then commands the closed
   angle. The shot captures both angles and the entered time when pressed.
 - **Open:** immediately commands the open angle and holds it until Close or Shoot.

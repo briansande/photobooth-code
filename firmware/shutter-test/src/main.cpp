@@ -8,8 +8,8 @@ WebServer server(80);
 PhotoboothShutter shutter;
 bool ready = false;
 uint32_t openDurationUs = 1000000;
-uint32_t closedAngle = 90;
-uint32_t openAngle = 100;
+uint32_t closedAngle = 30;
+uint32_t openAngle = 85;
 uint32_t lastStatusMs = 0;
 uint32_t reportedShots = 0;
 
